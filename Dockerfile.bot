@@ -1,0 +1,29 @@
+# ==================== Dockerfile.bot ====================
+FROM python:3.9-slim
+
+# Устанавливаем curl (не обязательно, но полезно)
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Создаем не-root пользователя
+RUN useradd -m -u 1000 -s /bin/bash appuser
+
+# Рабочая директория
+WORKDIR /app
+
+# Копируем зависимости бота
+COPY requirements/bot.txt .
+
+# Устанавливаем зависимости
+RUN pip install --no-cache-dir -r bot.txt
+
+# Копируем код бота
+COPY client.py .
+
+# Даем права
+RUN chown -R appuser:appuser /app
+USER appuser
+
+# Команда запуска
+CMD ["python", "client.py"]

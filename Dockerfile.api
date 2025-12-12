@@ -1,0 +1,34 @@
+# ==================== Dockerfile.api ====================
+FROM python:3.9-slim
+
+# Обновляем систему и ставим curl для healthcheck
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Создаем не-root пользователя для безопасности
+RUN useradd -m -u 1000 -s /bin/bash appuser
+
+# Рабочая директория
+WORKDIR /app
+
+# Копируем файл с зависимостями
+COPY requirements/api.txt .
+
+# Устанавливаем Python зависимости
+RUN pip install --no-cache-dir -r api.txt
+
+# Копируем код сервера
+COPY server.py .
+
+# Даем права нашему пользователю
+RUN chown -R appuser:appuser /app
+
+# Переключаемся на не-root пользователя
+USER appuser
+
+# Открываем порт 8000
+EXPOSE 8000
+
+# Команда запуска
+CMD ["python", "server.py"]

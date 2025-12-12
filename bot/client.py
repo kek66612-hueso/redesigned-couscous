@@ -6,22 +6,32 @@ import logging
 import random
 import time
 from functools import wraps
+import os
+from dotenv import load_dotenv
 
+# ==================== ЗАГРУЗКА ПЕРЕМЕННЫХ ОКРУЖЕНИЯ ====================
+load_dotenv()
+ADMIN_ID = os.getenv('ADMIN_ID')
 # ==================== КОНФИГУРАЦИЯ ====================
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-bot = telebot.TeleBot('8328415828:AAFBJ2yOBr3UzQZw6a9EI7y0h4GH91szmsU')  # Токен бота
-API_BASE_URL = "http://localhost:8000"
-API_TIMEOUT = 10
-MAX_RETRIES = 3
+# ==================== ИНИЦИАЛИЗАЦИЯ БОТА ====================
+
+BOT_TOKEN = os.getenv('BOT_TOKEN')
+
+bot = telebot.TeleBot(BOT_TOKEN)
+
+# Настройки API
+API_BASE_URL = os.getenv('API_BASE_URL', "http://localhost:8000")
+API_TIMEOUT = int(os.getenv('API_TIMEOUT', '10'))
+MAX_RETRIES = int(os.getenv('MAX_RETRIES', '3'))
 
 
 # ==================== КЭШ И СОСТОЯНИЯ ====================
 class SafeDict:
-    """Безопасный словарь с автоматической очисткой старых записей"""
 
     def __init__(self, max_age_seconds=3600):
         self.data = {}
@@ -234,6 +244,14 @@ def validate_user_input(text, max_length=100):
 
 
 # ==================== ОСНОВНЫЕ ОБРАБОТЧИКИ ====================
+def notify_admin(message_text):
+    """Отправляет сообщение администратору"""
+    try:
+        if ADMIN_ID:
+            bot.send_message(ADMIN_ID, f"🤖 Бот: {message_text}")
+    except Exception as e:
+        logging.error(f"Не удалось отправить уведомление админу: {e}")
+
 @bot.message_handler(commands=['start', 'help', 'restart'])
 @safe_bot_handler
 def send_welcome(message):
@@ -282,7 +300,7 @@ def send_welcome(message):
         last_message_ids[user_id] = msg.message_id
     except Exception as e:
         logging.error(f"Ошибка отправки welcome: {e}")
-
+    notify_admin(f"Пользователь {user_name} запустил бота (ID: {user_id})")
 
 @bot.message_handler(func=lambda message: message.text == "👤 Мои матчи")
 @safe_bot_handler

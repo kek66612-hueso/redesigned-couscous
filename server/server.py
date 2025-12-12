@@ -6,10 +6,22 @@ from urllib.parse import urlparse, parse_qs
 import threading
 import time
 import logging
+import os
+from dotenv import load_dotenv
+
+# ==================== ЗАГРУЗКА ПЕРЕМЕННЫХ ====================
+load_dotenv()
+
+
+SERVER_HOST = os.getenv('SERVER_HOST', '0.0.0.0')
+SERVER_PORT = int(os.getenv('SERVER_PORT', '8000'))
+DEBUG = os.getenv('DEBUG', 'false').lower() == 'true'
 
 # Настройка логирования
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
+logging.basicConfig(
+    level=logging.DEBUG if DEBUG else logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
 # ==================== МОДЕЛИ ДАННЫХ ====================
 class Database:
@@ -408,7 +420,7 @@ class APIHandler(BaseHTTPRequestHandler):
 
 
 # ==================== ЗАПУСК СЕРВЕРА ====================
-def run_server(port=8000):
+def run_server(port=SERVER_PORT):  # ← ИСПОЛЬЗУЕМ ПЕРЕМЕННУЮ
     """Запуск HTTP сервера"""
     server_address = ('', port)
     httpd = HTTPServer(server_address, APIHandler)
